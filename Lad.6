@@ -69,8 +69,8 @@ float** _algorithm_SEE(float** _M1, float** _M2)
 		xor edi, edi
 		movaps M1[edi], xmm0
 	}
-	cout << "Складывание столбцов : SEE:\n";
-	print(M1);
+	/*cout << "Складывание столбцов : SEE:\n";
+	print(M1);*/
 
 	_asm
 	{
@@ -166,8 +166,8 @@ float** _algorithm_SEE(float** _M1, float** _M2)
 		cmp ecx, 4
 		jb stringM
 	}
-	cout << "Перемножение матриц : SEE:\n";
-	print(M1);
+	/*cout << "Перемножение матриц : SEE:\n";
+	print(M1);*/
 
 	_asm
 	{
@@ -189,8 +189,8 @@ float** _algorithm_SEE(float** _M1, float** _M2)
 		divps xmm0, xmm1
 		movaps M1[48], xmm0
 	}
-	cout << "Поделенное на заданное число : SEE:\n";
-	print(M1);
+	/*cout << "Поделенное на заданное число : SEE:\n";
+	print(M1);*/
 
 	uint64_t finish = rdtsc();
 
@@ -256,8 +256,8 @@ float** _algorithm_noSEE(float** _M1, float** _M2)
 			faddp st(1), st
 			fst[esi]
 		}
-		cout << "Складывание столбцов : noSEE:\n";
-		print(M1);
+		/*cout << "Складывание столбцов : noSEE:\n";
+		print(M1);*/
 
 		_asm
 		{
@@ -367,8 +367,8 @@ float** _algorithm_noSEE(float** _M1, float** _M2)
 			sub edx, 16
 		A4:
 		}
-		cout << "Перемножение матриц : noSEE:\n";
-		print(M1);
+		/*cout << "Перемножение матриц : noSEE:\n";
+		print(M1);*/
 
 		_asm
 		{
@@ -393,8 +393,8 @@ float** _algorithm_noSEE(float** _M1, float** _M2)
 			cmp ecx, 16
 			jb A
 		}
-		cout << "Поделенное на заданное число : noSEE:\n";
-		print(M1);
+		/*cout << "Поделенное на заданное число : noSEE:\n";
+		print(M1);*/
 
 		uint64_t finish = rdtsc();
 

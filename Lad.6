@@ -1,0 +1,470 @@
+// Бронников Алексей.   Вариант 9.
+#include <iostream>
+#include <stdio.h>
+#include <intrin.h>
+using namespace std;
+
+// Глобальные const
+const int n = 4;
+const float v = 2.1;
+float x;
+// Типы данных
+typedef _declspec(align(16)) float matrix[n][n];
+
+// Основные процедуры
+float** _algorithm_SEE(float** _M1, float** _M2);
+float** _algorithm_noSEE(float** _M1, float** _M2);
+// Вспомогательные процедуры
+float** matrixRandom();
+float** matrixCreate(float x);
+void print(float** M);
+void print(matrix M);
+void s(int s[n][n]);
+uint64_t rdtsc();
+
+
+int main()
+{
+	setlocale(LC_ALL, "ru");
+	float** M1; float** M2;
+
+	cout << "Введите делитель матрицы: "; cin >> x; cout << endl;
+	
+	M1 = matrixRandom();
+	M2 = matrixRandom();
+
+	cout << "SEE:\n";
+	print(_algorithm_SEE(M1, M2));
+	cout << "noSEE:\n";
+	print(_algorithm_noSEE(M1, M2));
+}
+
+float** _algorithm_SEE(float** _M1, float** _M2)
+{
+	float** MSEE = matrixCreate(0);
+	matrix M1, M2, temp;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			M1[i][j] = _M1[i][j];
+			M2[i][j] = _M2[i][j];
+			temp[i][j] = x;
+		}
+	}
+	
+	uint64_t start = rdtsc();
+	
+	_asm
+	{
+		// Поэлементно складывает 1 и 3 столбцы матрицы, результат ложит в первый столбец (в задание не было описано куда)
+		xor edi, edi   // 1 столбец
+		movaps xmm0, M1[edi]
+
+		mov edi, 32    // 3 столбец
+		movaps xmm1, M1[edi]
+
+		addps xmm0, xmm1
+
+		xor edi, edi
+		movaps M1[edi], xmm0
+	}
+	cout << "Складывание столбцов : SEE:\n";
+	print(M1);
+
+	_asm
+	{
+		// Умножение матрицы M1 на M2
+		xor edi, edi
+		xor esi, esi
+		mov ecx, 0
+
+	stringM:
+		/* *** */   // Строка из матрицы M1 -> столбец
+		movss xmm0, M1[edi]
+		movss temp[0], xmm0
+
+		add edi, 16
+
+		movss xmm0, M1[edi]
+		movss temp[4], xmm0
+
+		add edi, 16
+
+		movss xmm0, M1[edi]
+		movss temp[8], xmm0
+
+		add edi, 16
+
+		movss xmm0, M1[edi]
+		movss temp[12], xmm0
+		/* *** */
+
+		/* *** */
+		movaps xmm0, temp[0]
+		movaps xmm1, M2[0]
+
+		mulps xmm1, xmm0
+		movaps temp[0], xmm1
+
+		xorps xmm1, xmm1
+		addss xmm1, temp[0]
+		addss xmm1, temp[4]
+		addss xmm1, temp[8]
+		addss xmm1, temp[12]
+
+		movss M1[esi], xmm1
+		add esi, 16
+		
+		// *****
+		movaps xmm1, M2[16]
+
+		mulps xmm1, xmm0
+		movaps temp[0], xmm1
+
+		xorps xmm1, xmm1
+		addss xmm1, temp[0]
+		addss xmm1, temp[4]
+		addss xmm1, temp[8]
+		addss xmm1, temp[12]
+
+		movss M1[esi], xmm1
+		add esi, 16
+
+		// *****
+		movaps xmm1, M2[32]
+
+		mulps xmm1, xmm0
+		movaps temp[0], xmm1
+
+		xorps xmm1, xmm1
+		addss xmm1, temp[0]
+		addss xmm1, temp[4]
+		addss xmm1, temp[8]
+		addss xmm1, temp[12]
+
+		movss M1[esi], xmm1
+		add esi, 16
+
+		// *****
+		movaps xmm1, M2[48]
+
+		mulps xmm1, xmm0
+		movaps temp[0], xmm1
+
+		xorps xmm1, xmm1
+		addss xmm1, temp[0]
+		addss xmm1, temp[4]
+		addss xmm1, temp[8]
+		addss xmm1, temp[12]
+
+		movss M1[esi], xmm1
+		sub esi, 44
+		sub edi, 44
+
+		add ecx, 1
+		cmp ecx, 4
+		jb stringM
+	}
+	cout << "Перемножение матриц : SEE:\n";
+	print(M1);
+
+	_asm
+	{
+		// Делим все элементы матрицы на заданное число
+		movaps xmm1, temp[16]
+		movaps xmm0, M1[0]
+		divps xmm0, xmm1
+		movaps M1[0], xmm0
+
+		movaps xmm0, M1[16]
+		divps xmm0, xmm1
+		movaps M1[16], xmm0
+
+		movaps xmm0, M1[32]
+		divps xmm0, xmm1
+		movaps M1[32], xmm0
+
+		movaps xmm0, M1[48]
+		divps xmm0, xmm1
+		movaps M1[48], xmm0
+	}
+	cout << "Поделенное на заданное число : SEE:\n";
+	print(M1);
+
+	uint64_t finish = rdtsc();
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			MSEE[i][j] = M1[i][j];
+		}
+	}
+
+	cout << "Время работы : SEE: " << finish - start << " тактов." << endl << endl << endl;
+	return MSEE;
+}
+float** _algorithm_noSEE(float** _M1, float** _M2)
+{
+	{
+		float** MnoSEE = matrixCreate(0);
+		matrix M1, M2, temp;
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				M1[i][j] = _M1[i][j];
+				M2[i][j] = _M2[i][j];
+				temp[i][j] = x;
+			}
+		}
+
+		uint64_t start = rdtsc();
+
+		_asm
+		{
+			// Поэлементно складывает 1 и 3 столбцы матрицы, результат ложит в первый столбец (в задание не было описано куда)
+			
+			// Инициализация FPU. Подготовка стека сопроцессора для нормальной работы сопроцессора.
+			finit
+
+			lea esi, M1
+			fld [esi]
+			fld [esi + 32]
+			faddp st(1), st
+			fstp [esi]
+
+			add esi, 4
+
+			fld[esi]
+			fld[esi + 32]
+			faddp st(1), st
+			fstp [esi]
+
+			add esi, 4
+
+			fld[esi]
+			fld[esi + 32]
+			faddp st(1), st
+			fst[esi]
+
+			add esi, 4
+
+			fld[esi]
+			fld[esi + 32]
+			faddp st(1), st
+			fst[esi]
+		}
+		cout << "Складывание столбцов : noSEE:\n";
+		print(M1);
+
+		_asm
+		{
+			// Умножение матрицы M1 на M2
+
+			// Инициализация FPU. Подготовка стека сопроцессора для нормальной работы сопроцессора.
+			finit
+
+			lea esi, M1
+			lea edi, M2
+			lea edx, temp
+			mov ecx, 0
+
+		stringM:
+			fld[esi]
+			fld[esi + 16]
+			fld[esi + 32]
+			fld[esi + 48]
+
+			fld[edi]
+			fld[edi + 4]
+			fld[edi + 8]
+			fld[edi + 12]
+
+
+			fmulp st(4), st
+			fmulp st(4), st
+			fmulp st(4), st
+			fmulp st(4), st
+
+			faddp st(1), st
+			faddp st(1), st
+			faddp st(1), st
+
+			fstp [edx]
+			
+			add ecx, 1
+			add edi, 16
+			add edx, 4
+
+			cmp ecx, 4
+			jb stringM
+			jne A1
+
+			fld[temp]
+			fld[temp + 4]
+			fld[temp + 8]
+			fld[temp + 12]
+			fstp[M1 + 48]
+			fstp[M1 + 32]
+			fstp[M1 + 16]
+			fstp[M1]
+
+			add esi, 4
+			sub edi, 64
+			sub edx, 16
+		A1:
+			cmp ecx, 8
+			jb stringM
+			jne A2
+
+			fld[temp]
+			fld[temp + 4]
+			fld[temp + 8]
+			fld[temp + 12]
+			fstp[M1 + 52]
+			fstp[M1 + 36]
+			fstp[M1 + 20]
+			fstp[M1 + 4]
+
+			add esi, 4
+			sub edi, 64
+			sub edx, 16
+		A2:
+			cmp ecx, 12
+			jb stringM
+			jne A3
+
+			fld[temp]
+			fld[temp + 4]
+			fld[temp + 8]
+			fld[temp + 12]
+			fstp[M1 + 56]
+			fstp[M1 + 40]
+			fstp[M1 + 24]
+			fstp[M1 + 8]
+
+			add esi, 4
+			sub edi, 64
+			sub edx, 16
+		A3:
+			cmp ecx, 16
+			jb stringM
+			jne A4
+
+			fld[temp]
+			fld[temp + 4]
+			fld[temp + 8]
+			fld[temp + 12]
+			fstp[M1 + 60]
+			fstp[M1 + 44]
+			fstp[M1 + 28]
+			fstp[M1 + 12]
+
+			add esi, 4
+			sub edi, 64
+			sub edx, 16
+		A4:
+		}
+		cout << "Перемножение матриц : noSEE:\n";
+		print(M1);
+
+		_asm
+		{
+			// Делим все элементы матрицы на заданное число
+
+			// Инициализация FPU. Подготовка стека сопроцессора для нормальной работы сопроцессора.
+			finit
+
+			fld x
+			lea esi, M1
+			mov ecx, 0
+
+		A:
+			fld[esi]
+
+			fdiv st, st(1)
+			fstp[esi]
+
+			add ecx, 1
+			add esi, 4
+				
+			cmp ecx, 16
+			jb A
+		}
+		cout << "Поделенное на заданное число : noSEE:\n";
+		print(M1);
+
+		uint64_t finish = rdtsc();
+
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				MnoSEE[i][j] = M1[i][j];
+			}
+		}
+
+		cout << "Время работы : noSEE: " << finish - start << " тактов." << endl << endl << endl;
+		return MnoSEE;
+	}
+}
+
+float** matrixRandom()
+{
+	float** m = new float* [n];
+	for (int i = 0; i < n; i++)
+	{
+		m[i] = new float[n];
+		for (int j = 0; j < n; j++)
+			m[i][j] = rand() % 10;
+	}
+
+	cout << "Сгенерирована матрица:\n";
+	print(m);
+
+	return m;
+}
+float** matrixCreate(float x)
+{
+	float** m = new float* [n];
+	for (int i = 0; i < n; i++)
+	{
+		m[i] = new float[n];
+		for (int j = 0; j < n; j++)
+			m[i][j] = x;
+	}
+
+	return m;
+}
+void print(float** M)
+{
+	cout << "Результирующая матрица:\n";
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			// i и j расположены правильно
+			cout << M[j][i] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+}
+void print(matrix M)
+{
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			// i и j расположены правильно
+			cout << M[j][i] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+}
+uint64_t rdtsc() {
+	return __rdtsc();
+}
